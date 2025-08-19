@@ -75,7 +75,7 @@ export interface PreparedStatement {
 }
 
 export interface SqliteVariant {
-  opener(dbPath: string, mode: OpenMode): Promise<MinDB>;
+  opener(dbPath: string, mode: OpenMode, attach?: string[]): Promise<MinDB>;
 }
 
 export interface Backup {
