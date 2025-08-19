@@ -46,6 +46,8 @@ export interface OpenDocOptions {
    * access control.
    */
   linkParameters?: Record<string, string>;
+
+  attachedDocuments?: string[]
 }
 
 /**

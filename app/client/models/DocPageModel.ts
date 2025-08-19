@@ -61,6 +61,7 @@ export interface DocInfo extends Document {
   isTemplate: boolean;
   idParts: UrlIdParts;
   openMode: OpenDocMode;
+  attachedDocuments: string[];
 }
 
 export interface DocPageModel {
@@ -495,6 +496,7 @@ contact the document owners to attempt a document recovery. [{{error}}]", { erro
       openMode: doc.openMode,
       linkParameters,
       originalUrlId: options.originalUrlId,
+      attachedDocuments: doc.attachedDocuments
     });
     const { user, recoveryMode, userOverride } = openDocResponse;
     doc.user = user;
@@ -664,6 +666,7 @@ function buildDocInfo(doc: Document, mode: OpenDocMode | undefined): DocInfo {
     isReadonly: !isEditable,
     idParts,
     openMode,
+    attachedDocuments: doc.options?.attachedDocuments || []
   };
 }
 

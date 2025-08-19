@@ -104,3 +104,5 @@ xunit.xml
 
 # Storybook
 /storybook-static/
+
+sqlite

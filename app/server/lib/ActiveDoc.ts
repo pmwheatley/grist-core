@@ -818,6 +818,7 @@ export class ActiveDoc extends EventEmitter {
     skipInitialTable?: boolean,  // If set, and document is new, "Table1" will not be added.
     useExisting?: boolean,       // If set, document can be created as an overlay on
     // an existing sqlite file.
+    attachedDocuments?: string[],
   }): Promise<ActiveDoc> {
     const startTime = Date.now();
     this._log.debug(docSession, "loadDoc");
@@ -836,7 +837,9 @@ export class ActiveDoc extends EventEmitter {
           afterMigration: async (newVersion, success) => {
             return this._afterMigration(docSession, "storage",  newVersion, success);
           },
-        });
+        },
+        options?.attachedDocuments
+        );
       }
       this._registerSQLiteDB();
 
