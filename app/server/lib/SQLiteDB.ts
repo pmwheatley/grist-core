@@ -170,8 +170,10 @@ export class SQLiteDB implements ISQLiteDB {
    */
   public static async openDB(dbPath: string, schemaInfo: SchemaInfo,
     mode: OpenMode = OpenMode.OPEN_CREATE,
-    hooks: MigrationHooks = {}): Promise<SQLiteDB> {
-    const db = await SQLiteDB.openDBRaw(dbPath, mode);
+    hooks: MigrationHooks = {},
+    attachedDocuments: string[] = []
+): Promise<SQLiteDB> {
+    const db = await SQLiteDB.openDBRaw(dbPath, mode, attachedDocuments);
     const userVersion: number = await db.getMigrationVersion();
 
     // It's possible that userVersion is 0 for a non-empty DB if it was created without this
@@ -205,8 +207,10 @@ export class SQLiteDB implements ISQLiteDB {
    * any migrations.
    */
   public static async openDBRaw(dbPath: string,
-    mode: OpenMode = OpenMode.OPEN_CREATE): Promise<SQLiteDB> {
-    const minDb: MinDB = await getVariant().opener(dbPath, mode);
+    mode: OpenMode = OpenMode.OPEN_CREATE,
+    attachedDocuments: string[] = []
+): Promise<SQLiteDB> {
+    const minDb: MinDB = await getVariant().opener(dbPath, mode, attachedDocuments);
     if (SQLiteDB._addOpens(dbPath, 1) > 1) {
       log.warn("SQLiteDB[%s] avoid opening same DB more than once", dbPath);
     }

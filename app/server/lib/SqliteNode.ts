@@ -34,7 +34,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
   public static async opener(
     dbPath: string,
     mode: OpenMode,
-    attach: string[] = [ "sxpGqvkfLaMKGyHA1Cpta3" ]
+    attachedDocuments: string[] = []
   ): Promise<any> {
     const sqliteMode: number =
       (mode === OpenMode.OPEN_READONLY ? sqlite3.OPEN_READONLY : sqlite3.OPEN_READWRITE) |
@@ -69,12 +69,12 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
     `;
 
     if ( dbPath.endsWith(".grist") ) {
-      await result.limitAttach( attach.length );
+      await result.limitAttach( attachedDocuments.length );
       const path = dbPath.split("/").slice(0, -1).join("/");
 
       let index = 1;
-      for ( const attachdb of attach ) {
-        await result.exec(`ATTACH DATABASE "${ path }/${ attachdb }.grist" as ${ attachdb };`);
+      for ( const attachedDoc of attachedDocuments ) {
+        await result.exec(`ATTACH DATABASE "${ path }/${ attachedDoc }.grist" as ${ attachedDoc };`);
 
         const offset = index * 1000
 
@@ -87,7 +87,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                onDemand,
                rawViewSectionRef + ${ offset } as rawViewSectionRef,
                recordCardViewSectionRef + ${ offset } as recordCardViewSectionRef
-        FROM ${ attachdb }._grist_Tables
+        FROM ${ attachedDoc }._grist_Tables
       `;
 
         _grist_Tables_column += `
@@ -110,7 +110,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                reverseCol,
                recalcWhen,
                recalcDeps
-        FROM ${ attachdb }._grist_Tables_column
+        FROM ${ attachedDoc }._grist_Tables_column
       `;
 
         _grist_Views += `
@@ -119,7 +119,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                 name,
                 type,
                 layoutSpec
-          FROM ${ attachdb }._grist_Views
+          FROM ${ attachedDoc }._grist_Views
       `;
 
         _grist_Views_section += `
@@ -144,7 +144,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                  embedId,
                  rules,
                  shareOptions
-          FROM ${ attachdb }._grist_Views_section
+          FROM ${ attachedDoc }._grist_Views_section
       `;
 
         _grist_Views_section_field += `
@@ -159,7 +159,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                  visibleCol,
                  filter,
                  rules
-          FROM ${ attachdb }._grist_Views_section_field;
+          FROM ${ attachedDoc }._grist_Views_section_field;
       `;
 
         index += 1;

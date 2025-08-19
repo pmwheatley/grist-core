@@ -341,6 +341,7 @@ export class DocManager extends EventEmitter implements IMemoryLoadEstimator {
 
     const openMode: OpenDocMode = options?.openMode || "default";
     const linkParameters = options?.linkParameters || {};
+    const attachedDocuments = options?.attachedDocuments || [];
     const originalUrlId = options?.originalUrlId;
     let auth: DocAuthorizer;
     const dbManager = this._homeDbManager;
@@ -367,7 +368,10 @@ export class DocManager extends EventEmitter implements IMemoryLoadEstimator {
       auth = new DummyAuthorizer("owners", docId);
     }
 
-    const docSessionPrecursor: DocSessionPrecursor = new DocSessionPrecursor(client, auth, { linkParameters });
+    const docSessionPrecursor: DocSessionPrecursor = new DocSessionPrecursor(client, auth, {
+      linkParameters,
+      attachedDocuments
+    });
     insightLog?.mark("openDocAuth");
 
     // Fetch the document, and continue when we have the ActiveDoc (which may be immediately).
@@ -649,7 +653,7 @@ export class DocManager extends EventEmitter implements IMemoryLoadEstimator {
             newDoc.on("backupMade", (bakPath: string) => {
               this.emit("backupMade", bakPath);
             });
-            return newDoc.loadDoc(docSession);
+            return newDoc.loadDoc(docSession, { attachedDocuments: docSession.attachedDocuments });
           }));
     } else {
       activeDoc = await this._activeDocs.get(docName)!;
