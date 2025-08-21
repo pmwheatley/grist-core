@@ -656,7 +656,10 @@ export class DocWorkerApi {
           if (e.message?.match(/does not exist yet/)) {
             // The document has never been seen on file system / s3.  It may be new, so
             // we try again after having created an ActiveDoc for the document.
-            await this._getActiveDoc(req);
+            const activeDoc = await this._getActiveDoc(req);
+
+            await this._docWorker.downloadAttachedDocs( req, res, this._docManager.storageManager, activeDoc );
+
             return this._docWorker.downloadDoc(req, res, this._docManager.storageManager, filename);
           } else {
             throw e;
@@ -670,6 +673,9 @@ export class DocWorkerApi {
           throw new ApiError("not authorized to download this document", 403);
         }
         if (dryRun) { dryRunSuccess(); return; }
+
+        await this._docWorker.downloadAttachedDocs( req, res, this._docManager.storageManager, activeDoc );
+
         return this._docWorker.downloadDoc(req, res, this._docManager.storageManager, filename);
       }
     }));
