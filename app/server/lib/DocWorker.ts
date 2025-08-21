@@ -25,6 +25,8 @@ import * as express from "express";
 import * as fse from "fs-extra";
 import * as mimeTypes from "mime-types";
 
+import { ActiveDoc } from './ActiveDoc';
+
 export interface AttachOptions {
   comm: Comm;                             // Comm object for methods called via websocket
   gristServer: GristServer;
@@ -72,6 +74,14 @@ export class DocWorker {
     } catch (err) {
       res.status(404).send({ error: err.toString() });
     }
+  }
+
+  public async downloadAttachedDocs( req: express.Request, res: express.Response,
+                                     storageManager: IDocStorageManager, activeDoc: ActiveDoc ) {
+    log.info(`Downloading attached docs for ${activeDoc.docName}`);
+    await Promise.all( (activeDoc.doc?.options?.attachedDocuments || []).map( (docId) =>
+      this.downloadDoc( req, res, storageManager, docId )
+    ));
   }
 
   public async downloadDoc(req: express.Request, res: express.Response,
