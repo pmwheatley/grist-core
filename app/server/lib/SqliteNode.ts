@@ -74,7 +74,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
 
       let index = 1;
       for ( const attachedDoc of attachedDocuments ) {
-        await result.exec(`ATTACH DATABASE "${ path }/${ attachedDoc }.grist" as ${ attachedDoc };`);
+        await result.exec(`ATTACH DATABASE "${ path }/${ attachedDoc }.grist" as "${ attachedDoc }";`);
 
         const offset = index * 1000
 
@@ -87,7 +87,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                onDemand,
                rawViewSectionRef + ${ offset } as rawViewSectionRef,
                recordCardViewSectionRef + ${ offset } as recordCardViewSectionRef
-        FROM ${ attachedDoc }._grist_Tables
+        FROM "${ attachedDoc }"._grist_Tables
       `;
 
         _grist_Tables_column += `
@@ -110,7 +110,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                reverseCol,
                recalcWhen,
                recalcDeps
-        FROM ${ attachedDoc }._grist_Tables_column
+        FROM "${ attachedDoc }"._grist_Tables_column
       `;
 
         _grist_Views += `
@@ -119,7 +119,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                 name,
                 type,
                 layoutSpec
-          FROM ${ attachedDoc }._grist_Views
+          FROM "${ attachedDoc }"._grist_Views
       `;
 
         _grist_Views_section += `
@@ -144,7 +144,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                  embedId,
                  rules,
                  shareOptions
-          FROM ${ attachedDoc }._grist_Views_section
+          FROM "${ attachedDoc }"._grist_Views_section
       `;
 
         _grist_Views_section_field += `
@@ -159,7 +159,7 @@ export class NodeSqlite3DatabaseAdapter implements MinDB {
                  visibleCol,
                  filter,
                  rules
-          FROM ${ attachedDoc }._grist_Views_section_field;
+          FROM "${ attachedDoc }"._grist_Views_section_field;
       `;
 
         index += 1;

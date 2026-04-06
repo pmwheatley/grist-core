@@ -126,7 +126,7 @@ export class AttachDocumentManager extends Disposable {
     const availableDocuments = this._options.home.currentWSDocs.get().filter( doc => doc.id !== _options.document.id );
 
     this._attachedDocs = availableDocuments.reduce( ( memo, doc ) => {
-      memo[doc.id] = Observable<boolean>.create(this,
+      memo[doc.id] = ( Observable<boolean> ).create(this,
         (this._model.document.options?.attachedDocuments || []).includes( doc.id) );
       return memo;
     }, {} as Record<string, Observable<boolean>>);
