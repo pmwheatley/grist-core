@@ -1,5 +1,5 @@
 import { stopEvent } from "app/client/lib/domUtils";
-import { loadUserManager } from "app/client/lib/imports";
+import { loadAttachDocumentManager, loadUserManager } from 'app/client/lib/imports';
 import { makeT } from "app/client/lib/localization";
 import { getTimeFromNow } from "app/client/lib/timeUtils";
 import { docUrl, urlState } from "app/client/models/gristUrlState";
@@ -277,6 +277,14 @@ export function makeDocOptionsMenu(home: HomeModel, doc: Document) {
     });
   }
 
+  async function attachDocs() {
+    const api = home.app.api;
+    (await loadAttachDocumentManager()).showAttachDocumentsModal(api, {
+      home,
+      document: doc
+    });
+  }
+
   return [
     menuItem(
       () => showRenameDocModal({ home, doc }),
@@ -325,6 +333,11 @@ export function makeDocOptionsMenu(home: HomeModel, doc: Document) {
         dom.cls("disabled", doc.disabledAt !== undefined),
         testId("tb-share-option"))
     ),
+    menuItem(
+      attachDocs,
+      "Attach documents",
+      testId("attach-docs")
+    )
   ];
 }
 

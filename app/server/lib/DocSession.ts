@@ -34,6 +34,7 @@ export class OptDocSession extends AuthSession {
   public authorizer?: DocAuthorizer;
   public forkingAsOwner?: boolean;  // Set if it is appropriate in a pre-fork state to become an owner.
   public linkParameters?: Record<string, string>;
+  public attachedDocuments: string[];
 
   private get _authSession(): AuthSession {
     return this.client?.authSession ?? (this.req ? AuthSession.fromReq(this.req) : AuthSession.unauthenticated());
@@ -44,6 +45,7 @@ export class OptDocSession extends AuthSession {
     browserSettings?: BrowserSettings,
     req?: RequestWithLogin,
     linkParameters?: Record<string, string>,
+    attachedDocuments?: string[]
   }) {
     super();
     this.client = options.client ?? null;
@@ -51,6 +53,7 @@ export class OptDocSession extends AuthSession {
     this.req = options.req;
     this.linkParameters = options.linkParameters ??
       (this.req?.url ? decodeLinkParameters(new URLSearchParams(this.req.url.split("?")[1])) : undefined);
+    this.attachedDocuments = options.attachedDocuments || [];
   }
 
   // Expose AuthSession interface directly. Note that other AuthSession helper methods are also
@@ -102,6 +105,7 @@ export class DocSessionPrecursor extends OptDocSession {
 
   constructor(client: Client, authorizer: DocAuthorizer, options: {
     linkParameters?: Record<string, string>,
+    attachedDocuments?: string[]
   }) {
     super({ ...options, client });
     this.client = client;
@@ -118,7 +122,7 @@ export class DocSession extends DocSessionPrecursor {
   public readonly fd: number;
 
   constructor(ds: DocSessionPrecursor, activeDoc: ActiveDoc, fd: number) {
-    super(ds.client, ds.authorizer, { linkParameters: ds.linkParameters });
+    super(ds.client, ds.authorizer, { linkParameters: ds.linkParameters, attachedDocuments: ds.attachedDocuments });
     this.activeDoc = activeDoc;
     this.fd = fd;
   }

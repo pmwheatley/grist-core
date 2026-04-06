@@ -151,7 +151,13 @@ export class TableMetadataLoader {
   // Operation to fetch a single table from database.
   public async opFetch(tableId: string) {
     try {
-      return await this._options.fetchTable(tableId);
+      let actualTableId = tableId;
+      if ( ['_grist_Tables', '_grist_Tables_column', '_grist_Views', '_grist_Views_section', '_grist_Views_section_field'].includes( tableId ) ) {
+        actualTableId = `_${ tableId }`
+      }
+
+      const res = await this._options.fetchTable(actualTableId);
+      return res;
     } catch (err) {
       if (/no such table/.test(err.message)) { return null; }
       throw err;

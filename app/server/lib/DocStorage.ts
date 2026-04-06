@@ -680,10 +680,12 @@ export class DocStorage implements ISQLiteDB, OnDemandStorage {
   /**
    * Opens an existing SQLite database and prepares it for use.
    */
-  public openFile(hooks: MigrationHooks = {}): Promise<void> {
+  public openFile(hooks: MigrationHooks = {},
+                  attachedDocuments: string[] = []
+  ): Promise<void> {
     // It turns out to be important to return a bluebird promise, a lot of code outside
     // of DocStorage ultimately depends on this.
-    return bluebird.Promise.resolve(this._openFile(OpenMode.OPEN_EXISTING, hooks))
+    return bluebird.Promise.resolve(this._openFile(OpenMode.OPEN_EXISTING, hooks, attachedDocuments))
       .then(() => this._initDB())
       .then(() => this._updateMetadata());
   }
@@ -1711,9 +1713,12 @@ export class DocStorage implements ISQLiteDB, OnDemandStorage {
    * Creates a new or opens an existing SQLite database, depending on mode.
    * @return {Promise<number>} Promise for user_version stored in the database.
    */
-  private async _openFile(mode: number, hooks: MigrationHooks): Promise<number> {
+  private async _openFile(mode: number,
+                          hooks: MigrationHooks,
+                          attachedDocuments: string[] = []
+  ): Promise<number> {
     try {
-      this._db = await SQLiteDB.openDB(this.docPath, DocStorage.docStorageSchema, mode, hooks);
+      this._db = await SQLiteDB.openDB(this.docPath, DocStorage.docStorageSchema, mode, hooks, attachedDocuments);
       log.debug("DB %s open successfully", this.docName);
       return this._db.getMigrationVersion();
     } catch (err) {

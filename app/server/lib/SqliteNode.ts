@@ -6,8 +6,8 @@ import { OpenMode, RunResult } from "app/server/lib/SQLiteDB";
 import * as sqlite3 from "@gristlabs/sqlite3";
 
 export class NodeSqliteVariant implements SqliteVariant {
-  public opener(dbPath: string, mode: OpenMode): Promise<MinDB> {
-    return NodeSqlite3DatabaseAdapter.opener(dbPath, mode);
+  public opener(dbPath: string, mode: OpenMode, attach?: string[]): Promise<MinDB> {
+    return NodeSqlite3DatabaseAdapter.opener(dbPath, mode, attach);
   }
 }
 
@@ -31,14 +31,147 @@ export class NodeSqlite3PreparedStatement implements PreparedStatement {
 }
 
 export class NodeSqlite3DatabaseAdapter implements MinDB {
-  public static async opener(dbPath: string, mode: OpenMode): Promise<any> {
+  public static async opener(
+    dbPath: string,
+    mode: OpenMode,
+    attachedDocuments: string[] = []
+  ): Promise<any> {
     const sqliteMode: number =
       (mode === OpenMode.OPEN_READONLY ? sqlite3.OPEN_READONLY : sqlite3.OPEN_READWRITE) |
       (mode === OpenMode.OPEN_CREATE || mode === OpenMode.CREATE_EXCL ? sqlite3.OPEN_CREATE : 0);
     let _db: sqlite3.Database;
     await fromCallback((cb) => { _db = new sqlite3.Database(dbPath, sqliteMode, cb); });
     const result = new NodeSqlite3DatabaseAdapter(_db!);
-    await result.limitAttach(0);  // Outside of VACUUM, we don't allow ATTACH.
+
+    let _grist_Tables = `
+        CREATE TEMP VIEW __grist_Tables as
+        SELECT * FROM _grist_Tables c
+    `;
+
+    let _grist_Tables_column = `
+        CREATE TEMP VIEW __grist_Tables_column as
+        SELECT * FROM _grist_Tables_column c
+    `;
+
+    let _grist_Views = `
+        CREATE TEMP VIEW __grist_Views as
+        SELECT * FROM _grist_Views c
+    `;
+
+    let _grist_Views_section = `
+        CREATE TEMP VIEW __grist_Views_section as
+        SELECT * FROM _grist_Views_section c
+    `;
+
+    let _grist_Views_section_field = `
+        CREATE TEMP VIEW __grist_Views_section_field as
+        SELECT * FROM _grist_Views_section_field c
+    `;
+
+    if ( dbPath.endsWith(".grist") ) {
+      await result.limitAttach( attachedDocuments.length );
+      const path = dbPath.split("/").slice(0, -1).join("/");
+
+      let index = 1;
+      for ( const attachedDoc of attachedDocuments ) {
+        await result.exec(`ATTACH DATABASE "${ path }/${ attachedDoc }.grist" as ${ attachedDoc };`);
+
+        const offset = index * 1000
+
+        _grist_Tables += `
+        UNION
+        SELECT id + ${ offset } as id,
+               tableId,
+               primaryViewId + ${ offset } as primaryViewId,
+               summarySourceTable,
+               onDemand,
+               rawViewSectionRef + ${ offset } as rawViewSectionRef,
+               recordCardViewSectionRef + ${ offset } as recordCardViewSectionRef
+        FROM ${ attachedDoc }._grist_Tables
+      `;
+
+        _grist_Tables_column += `
+        UNION
+        SELECT id + ${ offset } as id,
+               parentId + ${ offset } as parentId,
+               parentPos,
+               colId,
+               type,
+               widgetOptions,
+               isFormula,
+               formula,
+               label,
+               description,
+               untieColIdFromLabel,
+               summarySourceCol,
+               displayCol,
+               visibleCol,
+               rules,
+               reverseCol,
+               recalcWhen,
+               recalcDeps
+        FROM ${ attachedDoc }._grist_Tables_column
+      `;
+
+        _grist_Views += `
+          UNION
+          SELECT id + ${ offset } as id,
+                name,
+                type,
+                layoutSpec
+          FROM ${ attachedDoc }._grist_Views
+      `;
+
+        _grist_Views_section += `
+          UNION
+          SELECT id + ${ offset } as id,
+                 tableRef + ${ offset } as tableRef,
+                 iif( parentId = 0, 0, parentId + ${ offset } ),
+                 parentKey,
+                 title,
+                 description,
+                 defaultWidth,
+                 borderWidth,
+                 theme,
+                 options,
+                 chartType,
+                 layoutSpec,
+                 filterSpec,
+                 sortColRefs,
+                 linkSrcSectionRef,
+                 linkSrcColRef,
+                 linkTargetColRef,
+                 embedId,
+                 rules,
+                 shareOptions
+          FROM ${ attachedDoc }._grist_Views_section
+      `;
+
+        _grist_Views_section_field += `
+          UNION
+          SELECT id + ${ offset } as id,
+                 iif( parentId = 0, 0, parentId + ${ offset } ) as parentId,
+                 parentPos,
+                 colRef + ${ offset } as colRef,
+                 width,
+                 widgetOptions,
+                 displayCol,
+                 visibleCol,
+                 filter,
+                 rules
+          FROM ${ attachedDoc }._grist_Views_section_field;
+      `;
+
+        index += 1;
+      }
+    }
+
+    await result.exec( _grist_Tables );
+    await result.exec( _grist_Tables_column );
+    await result.exec( _grist_Views );
+    await result.exec( _grist_Views_section );
+    await result.exec( _grist_Views_section_field );
+
     return result;
   }
 
